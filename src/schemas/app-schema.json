@@ -1,6 +1,11 @@
 {
   "pages": [
     {
+      "path": "/candidates",
+      "title": "Candidate Applications",
+      "src": "candidates-schema.json"
+    },
+    {
       "path": "/inventory",
       "title": "Inventory",
       "forms": [
@@ -87,8 +92,11 @@
               "label": "Inventory Items",
               "config": {
                 "display": "inline",
+                "dataUrl": "http://localhost:4000/api/inventory/:id/items",
                 "validateUrl": "http://localhost:4000/api/inventory/item/validate",
-                "rowActions": true
+                "rowActions": true,
+                "pagination": true,
+                "pageSize": 10
               },
               "columns": [
                 {
