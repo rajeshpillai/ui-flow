@@ -5,6 +5,24 @@ const app = express();
 app.use(cors());
 
 
+app.get("/api/countries", (req, res) => {
+    res.json([
+      { code: "IN", description: "India" },
+      { code: "US", description: "United States" },
+      { code: "AU", description: "Australia" }
+    ]);
+  });
+  
+app.get("/api/states", (req, res) => {
+    res.json([
+        { code: "MH", description: "Maharashtra", countryCode: "IN" },
+        { code: "KA", description: "Karnataka", countryCode: "IN" },
+        { code: "NY", description: "New York", countryCode: "US" },
+        { code: "CA", description: "California", countryCode: "US" },
+        { code: "NSW", description: "New South Wales", countryCode: "AU" },
+        { code: "VIC", description: "Victoria", countryCode: "AU" }
+    ]);
+});
 
 app.post("/api/inventory", (req, res) => {
   console.log("CREATE Inventory:", req.body);

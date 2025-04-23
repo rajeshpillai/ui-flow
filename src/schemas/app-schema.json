@@ -29,6 +29,21 @@
               "required": true
             },
             {
+              "name": "country",
+              "label": "Country",
+              "type": "dropdown",
+              "lookupUrl": "http://localhost:4000/api/countries",
+              "required": true
+            },
+            {
+              "name": "state",
+              "label": "State",
+              "type": "dropdown",
+              "lookupUrl": "http://localhost:4000/api/states",
+              "dependentOn": "country",
+              "filterBy": "countryCode"
+            },
+            {
               "name": "startDate",
               "label": "Start Date",
               "type": "date"

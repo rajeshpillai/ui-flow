@@ -1,5 +1,5 @@
 // FormRenderer.tsx
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useFormSubmit } from "../hooks/use-form-submit";
 import GridField from "./GridField";
 
@@ -12,6 +12,20 @@ interface FormRendererProps {
 const FormRenderer: React.FC<FormRendererProps> = ({ schema, context, onChange }) => {
   const formRef = useRef<HTMLFormElement>(null);
   const { submitForm } = useFormSubmit();
+  const [dropdownOptions, setDropdownOptions] = useState<Record<string, any[]>>({});
+
+  useEffect(() => {
+    schema.fields?.forEach((field: any) => {
+      if (field.type === "dropdown" && field.lookupUrl && !dropdownOptions[field.name]) {
+        fetch(field.lookupUrl)
+          .then((res) => res.json())
+          .then((data) => {
+            setDropdownOptions((prev) => ({ ...prev, [field.name]: data }));
+          })
+          .catch(() => setDropdownOptions((prev) => ({ ...prev, [field.name]: [] })));
+      }
+    });
+  }, [schema.fields]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +58,13 @@ const FormRenderer: React.FC<FormRendererProps> = ({ schema, context, onChange }
     }
 
     if (field.type === "dropdown") {
+      const options = dropdownOptions[field.name] || field.options || [];
+      const dependsOn = field.dependentOn;
+      const filterKey = context[dependsOn];
+      const filtered = field.filterBy
+        ? options.filter((opt: any) => opt[field.filterBy] === filterKey)
+        : options;
+
       return (
         <div key={field.name} className="flex flex-col">
           <label className="font-medium mb-1">{field.label}</label>
@@ -53,8 +74,8 @@ const FormRenderer: React.FC<FormRendererProps> = ({ schema, context, onChange }
             className="border rounded p-2"
           >
             <option value="">Select</option>
-            {field.options?.map((opt: string, idx: number) => (
-              <option key={idx} value={opt}>{opt}</option>
+            {filtered.map((opt: any, idx: number) => (
+              <option key={idx} value={opt.code || opt.value || opt}>{opt.description || opt.label || opt}</option>
             ))}
           </select>
         </div>
