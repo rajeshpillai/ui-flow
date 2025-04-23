@@ -1,137 +1,81 @@
 {
-    "title": "Inventory Master",
-    "layout": "two-column",
-    "fields": [
-      {
-        "name": "inventoryName",
-        "label": "Inventory Name",
-        "type": "text",
-        "required": true,
-        "section": "Basic Info",
-        "tab": "General"
+  "title": "Inventory Master",
+  "layout": "two-column",
+  "fields": [
+    {
+      "name": "inventoryName",
+      "label": "Inventory Name",
+      "type": "text",
+      "required": true,
+      "tab": "General",
+      "section": "Basic Info"
+    },
+    {
+      "name": "type",
+      "label": "Type",
+      "type": "dropdown",
+      "options": ["Physical", "Digital"],
+      "required": true,
+      "tab": "General",
+      "section": "Basic Info"
+    },
+    {
+      "name": "startDate",
+      "label": "Start Date",
+      "type": "date",
+      "tab": "General",
+      "section": "Dates"
+    },
+    {
+      "name": "endDate",
+      "label": "End Date",
+      "type": "date",
+      "tab": "General",
+      "section": "Dates"
+    },
+    {
+      "name": "details",
+      "type": "grid",
+      "label": "Inventory Items",
+      "config": {
+        "display": "inline"  
       },
-      {
-        "name": "warehouse",
-        "label": "Warehouse",
-        "type": "dropdown",
-        "options": ["Main Warehouse", "Secondary Warehouse", "Cold Storage"],
-        "required": true,
-        "section": "Basic Info",
-        "tab": "General"
-      },
-      {
-        "name": "type",
-        "label": "Inventory Type",
-        "type": "dropdown",
-        "options": ["Personal", "Business"],
-        "required": true,
-        "section": "Basic Info",
-        "tab": "General"
-      },
-      {
-        "name": "gstNumber",
-        "label": "GST Number",
-        "type": "text",
-        "visibleIf": {
-          "field": "type",
-          "value": "Business"
+      "columns": [
+        {
+          "name": "itemCode",
+          "label": "Item Code",
+          "type": "dropdown",
+          "lookupUrl": "http://localhost:4000/api/items/lookup",
+          "required": true
         },
-        "section": "Basic Info",
-        "tab": "General"
-      },
-      {
-        "name": "startDate",
-        "label": "Start Date",
-        "type": "date",
-        "required": true,
-        "section": "Dates",
-        "tab": "General"
-      },
-      {
-        "name": "endDate",
-        "label": "End Date",
-        "type": "date",
-        "required": true,
-        "validation": {
-          "afterField": "startDate"
+        {
+          "name": "description",
+          "label": "Description",
+          "type": "text"
         },
-        "section": "Dates",
-        "tab": "General"
-      },
-      {
-        "name": "email",
-        "label": "Email",
-        "type": "email",
-        "required": true,
-        "remoteValidationUrl": "http://localhost:4000/api/validate/email",
-        "validation": {
-          "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
-        },
-        "section": "Basic Info",
-        "tab": "General"
-      },
-      {
-        "name": "details",
-        "type": "grid",
-        "label": "Inventory Items",
-        "tab": "Details",
-        "columns": [
-          {
-            "name": "itemCode",
-            "label": "Item Code",
-            "type": "dropdown",
-            "lookupUrl": "http://localhost:4000/api/items/lookup",
-            "required": true,
-            "section": "Item Info"
-          },
-          {
-            "name": "description",
-            "label": "Description",
-            "type": "text",
-            "required": false,
-            "section": "Item Info"
-          },
-          {
-            "name": "quantity",
-            "label": "Quantity",
-            "type": "number",
-            "required": true,
-            "validation": {
-              "range": { "min": 1, "max": 999 }
-            },
-            "section": "Item Info"
-          },
-          {
-            "name": "price",
-            "label": "Unit Price",
-            "type": "number",
-            "required": true,
-            "section": "Item Info"
-          },
-          {
-            "name": "total",
-            "label": "Total",
-            "type": "number",
-            "calculated": "quantity * price",
-            "section": "Item Info"
-          },
-          {
-            "name": "unit",
-            "label": "Unit",
-            "type": "dropdown",
-            "options": ["PCS", "KG", "Litre"],
-            "required": true,
-            "section": "Item Info"
-          },
-          {
-            "name": "expiryDate",
-            "label": "Expiry Date",
-            "type": "date",
-            "required": false,
-            "section": "Item Info"
+        {
+          "name": "quantity",
+          "label": "Quantity",
+          "type": "number",
+          "validation": {
+            "range": {
+              "min": 1,
+              "max": 10000
+            }
           }
-        ]
-      }
-    ]
-  }
-  
+        },
+        {
+          "name": "price",
+          "label": "Unit Price",
+          "type": "number"
+        },
+        {
+          "name": "total",
+          "label": "Total",
+          "type": "number",
+          "calculated": "quantity * price"
+        }
+      ]
+    }
+  ]
+}
