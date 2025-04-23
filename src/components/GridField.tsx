@@ -1,85 +1,97 @@
+// GridField.tsx
 import React, { useState, useEffect } from "react";
 
-export default function GridField({ field, onChange }) {
-  const [rows, setRows] = useState([{ id: Date.now(), values: {} }]);
-  const [lookupData, setLookupData] = useState({});
+interface GridFieldProps {
+  field: any;
+  value: any[];
+  onChange: (rows: any[]) => void;
+}
+
+const GridField: React.FC<GridFieldProps> = ({ field, value = [], onChange }) => {
+  const [rows, setRows] = useState<any[]>(value);
 
   useEffect(() => {
-    field.columns.forEach((col) => {
-      if (col.lookupUrl && !lookupData[col.name]) {
-        fetch(col.lookupUrl)
-          .then((res) => res.json())
-          .then((data) => {
-            setLookupData((prev) => ({ ...prev, [col.name]: data }));
-          });
-      }
-    });
-  }, [field.columns]);
-
-  useEffect(() => {
-    onChange(rows.map((row) => row.values));
+    onChange(rows);
   }, [rows]);
 
-  const handleChange = (rowId, colName, value) => {
-    setRows((prev) =>
-      prev.map((row) =>
-        row.id === rowId ? { ...row, values: { ...row.values, [colName]: value } } : row
-      )
-    );
-  };
-
   const addRow = () => {
-    setRows([...rows, { id: Date.now(), values: {} }]);
+    const initial = {};
+    field.columns.forEach((col: any) => (initial[col.name] = ""));
+    setRows([...rows, initial]);
   };
 
-  const deleteRow = (rowId) => {
-    setRows(rows.filter((row) => row.id !== rowId));
+  const updateCell = (rowIndex: number, key: string, val: any) => {
+    const updated = rows.map((row, i) => {
+      if (i !== rowIndex) return row;
+      const newRow = { ...row, [key]: val };
+
+      // recalculate dependent columns
+      field.columns.forEach((col: any) => {
+        if (col.calculated) {
+          try {
+            const calc = new Function(...Object.keys(newRow), `return ${col.calculated}`);
+            newRow[col.name] = calc(...Object.values(newRow));
+          } catch (e) {
+            console.warn("Calculation error:", e);
+          }
+        }
+      });
+
+      return newRow;
+    });
+    setRows(updated);
+  };
+
+  const removeRow = (index: number) => {
+    setRows(rows.filter((_, i) => i !== index));
   };
 
   return (
-    <div className="border rounded p-2">
-      <table className="table-auto w-full text-sm">
+    <div>
+      <table className="w-full border text-sm">
         <thead>
           <tr>
-            {field.columns.map((col, i) => (
-              <th key={i} className="border px-2 py-1 text-left">{col.label}</th>
+            {field.columns.map((col: any) => (
+              <th key={col.name} className="border p-2 text-left bg-gray-100">{col.label}</th>
             ))}
-            <th></th>
+            <th className="border p-2 bg-gray-100">Actions</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr key={row.id}>
-              {field.columns.map((col, i) => (
-                <td key={i} className="border px-2 py-1">
-                  {col.lookupUrl ? (
+          {rows.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              {field.columns.map((col: any) => (
+                <td key={col.name} className="border p-2">
+                  {col.type === "dropdown" && col.lookupUrl ? (
                     <select
-                      className="border p-1 w-full"
-                      value={row.values[col.name] || ""}
-                      onChange={(e) => handleChange(row.id, col.name, e.target.value)}
+                      className="border rounded w-full"
+                      value={row[col.name] || ""}
+                      onChange={(e) => updateCell(rowIndex, col.name, e.target.value)}
                     >
                       <option value="">Select</option>
-                      {(lookupData[col.name] || []).map((item, idx) => (
-                        <option key={idx} value={item.code}>{item.description}</option>
-                      ))}
+                      {/* TODO: fetch options from lookupUrl */}
+                      <option value="ITEM001">Item 001</option>
+                      <option value="ITEM002">Item 002</option>
                     </select>
+                  ) : col.calculated ? (
+                    <span>{row[col.name]}</span>
                   ) : (
                     <input
-                      type={col.type === "date" ? "date" : "text"}
-                      className="border p-1 w-full"
-                      value={row.values[col.name] || ""}
-                      onChange={(e) => handleChange(row.id, col.name, e.target.value)}
+                      type={col.type === "number" ? "number" : "text"}
+                      className="border rounded w-full"
+                      value={row[col.name] || ""}
+                      onChange={(e) => updateCell(rowIndex, col.name, e.target.value)}
                     />
                   )}
                 </td>
               ))}
-              <td>
+              <td className="border p-2 text-center">
                 <button
                   type="button"
-                  className="text-red-500 text-sm px-2"
-                  onClick={() => deleteRow(row.id)}
+                  onClick={() => removeRow(rowIndex)}
+                  className="text-red-600 hover:underline"
                 >
-                  ✕
+                  Delete
                 </button>
               </td>
             </tr>
@@ -89,10 +101,12 @@ export default function GridField({ field, onChange }) {
       <button
         type="button"
         onClick={addRow}
-        className="mt-2 px-4 py-1 bg-blue-500 text-white text-sm rounded"
+        className="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded"
       >
-        + Add Row
+        Add Row
       </button>
     </div>
   );
-}
+};
+
+export default GridField;

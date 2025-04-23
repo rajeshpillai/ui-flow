@@ -1,50 +1,89 @@
-import React, { useEffect, useState, forwardRef, useImperativeHandle } from "react";
-import FieldRenderer from "./FieldRenderer";
+// FormRenderer.tsx
+import React, { useRef } from "react";
+import { useFormSubmit } from "../hooks/use-form-submit";
+import GridField from "./GridField";
 
-const FormRenderer = forwardRef(({ schema, onChange, context, displayOnlyFields = [] }, ref) => {
-  const [values, setValues] = useState({});
-  const [errors, setErrors] = useState({});
+interface FormRendererProps {
+  schema: any;
+  context: any;
+  onChange: (data: any) => void;
+}
 
-  useEffect(() => {
-    onChange?.(values);
-  }, [values]);
+const FormRenderer: React.FC<FormRendererProps> = ({ schema, context, onChange }) => {
+  const formRef = useRef<HTMLFormElement>(null);
+  const { submitForm } = useFormSubmit();
 
-  const updateField = (name, value) => {
-    setValues(prev => ({ ...prev, [name]: value }));
-    setErrors(prev => ({ ...prev, [name]: null }));
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const action = schema.actions?.submit;
+    if (!action || !action.endpoint) {
+      console.warn("No submit action defined in schema.");
+      return;
+    }
+
+    submitForm(context, {
+      endpoint: action.endpoint,
+      method: action.method || "POST",
+      onSuccess: (res) => alert("Saved successfully."),
+      onError: (err) => alert("Error saving form.")
+    });
   };
 
-  useImperativeHandle(ref, () => ({
-    validate: () => {
-      let valid = true;
-      const newErrors = {};
-      schema.fields.forEach(field => {
-        const value = values[field.name];
-        if (field.required && (value === "" || value === undefined || value === null || (Array.isArray(value) && value.length === 0))) {
-          newErrors[field.name] = `${field.label} is required.`;
-          valid = false;
-        }
-      });
-      setErrors(newErrors);
-      return valid;
+  const renderField = (field: any) => {
+    if (field.type === "grid") {
+      return (
+        <div key={field.name} className="col-span-full">
+          <label className="font-semibold block mb-1">{field.label}</label>
+          <GridField
+            field={field}
+            value={context[field.name] || []}
+            onChange={(rows) => onChange({ ...context, [field.name]: rows })}
+          />
+        </div>
+      );
     }
-  }));
+
+    return (
+      <div key={field.name} className="flex flex-col">
+        <label className="font-medium mb-1">{field.label}</label>
+        <input
+          type={field.type || "text"}
+          value={context[field.name] || ""}
+          onChange={(e) => onChange({ ...context, [field.name]: e.target.value })}
+          className="border rounded p-2"
+        />
+      </div>
+    );
+  };
 
   return (
-    <div className={`grid gap-4 grid-cols-${schema.layout === "two-column" ? "2" : "1"}`}>
-      {schema.fields.map((field, index) => (
-        <FieldRenderer
-          key={index}
-          field={field}
-          value={values[field.name]}
-          error={errors[field.name]}
-          onChange={updateField}
-          context={context}
-          displayOnly={displayOnlyFields.includes(field.name)}
-        />
-      ))}
-    </div>
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {schema.fields?.map((field: any) => renderField(field))}
+      </div>
+
+      {schema.buttons && schema.buttons.length > 0 && (
+        <div className="mt-4 flex gap-4">
+          {schema.buttons.map((btn: any, idx: number) => (
+            <button
+              key={idx}
+              type={btn.action || "button"}
+              className={`px-6 py-2 rounded text-white ${
+                btn.style === "primary"
+                  ? "bg-green-600"
+                  : btn.style === "secondary"
+                  ? "bg-gray-500"
+                  : "bg-blue-600"
+              }`}
+              onClick={btn.action === "submit" ? handleSubmit : undefined}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </form>
   );
-});
+};
 
 export default FormRenderer;

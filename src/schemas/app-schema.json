@@ -1,0 +1,131 @@
+{
+  "pages": [
+    {
+      "path": "/inventory",
+      "title": "Inventory",
+      "forms": [
+        {
+          "id": "inventoryHeader",
+          "title": "Inventory Header",
+          "layout": "two-column",
+          "fields": [
+            {
+              "name": "id",
+              "label": "ID",
+              "type": "text",
+              "hidden": true
+            },
+            {
+              "name": "inventoryName",
+              "label": "Inventory Name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "type",
+              "label": "Type",
+              "type": "dropdown",
+              "options": ["Physical", "Digital"],
+              "required": true
+            },
+            {
+              "name": "startDate",
+              "label": "Start Date",
+              "type": "date"
+            },
+            {
+              "name": "endDate",
+              "label": "End Date",
+              "type": "date"
+            }
+          ],
+          "buttons": [
+            {
+              "label": "Save",
+              "action": "submit",
+              "style": "primary"
+            }
+          ],
+          "actions": {
+            "submit": {
+              "endpoint": "http://localhost:4000/api/inventory",
+              "method": "POST"
+            },
+            "update": {
+              "endpoint": "http://localhost:4000/api/inventory/:id",
+              "method": "PUT"
+            },
+            "delete": {
+              "endpoint": "http://localhost:4000/api/inventory/:id",
+              "method": "DELETE"
+            }
+          }
+        },
+        {
+          "id": "inventoryDetails",
+          "title": "Inventory Items",
+          "layout": "one-column",
+          "fields": [
+            {
+              "name": "details",
+              "type": "grid",
+              "label": "Inventory Items",
+              "config": {
+                "display": "inline"
+              },
+              "columns": [
+                {
+                  "name": "itemCode",
+                  "label": "Item Code",
+                  "type": "dropdown",
+                  "lookupUrl": "http://localhost:4000/api/items/lookup",
+                  "required": true
+                },
+                {
+                  "name": "description",
+                  "label": "Description",
+                  "type": "text"
+                },
+                {
+                  "name": "quantity",
+                  "label": "Quantity",
+                  "type": "number",
+                  "validation": {
+                    "range": {
+                      "min": 1,
+                      "max": 9999
+                    }
+                  }
+                },
+                {
+                  "name": "price",
+                  "label": "Unit Price",
+                  "type": "number"
+                },
+                {
+                  "name": "total",
+                  "label": "Total",
+                  "type": "number",
+                  "calculated": "quantity * price"
+                }
+              ]
+            }
+          ],
+          "buttons": [
+            {
+              "label": "Save Items",
+              "action": "submit",
+              "style": "primary"
+            }
+          ],
+          "actions": {
+            "submit": {
+              "endpoint": "http://localhost:4000/api/inventory/:id/items",
+              "method": "POST"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
