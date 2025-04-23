@@ -43,6 +43,24 @@ const FormRenderer: React.FC<FormRendererProps> = ({ schema, context, onChange }
       );
     }
 
+    if (field.type === "dropdown") {
+      return (
+        <div key={field.name} className="flex flex-col">
+          <label className="font-medium mb-1">{field.label}</label>
+          <select
+            value={context[field.name] || ""}
+            onChange={(e) => onChange({ ...context, [field.name]: e.target.value })}
+            className="border rounded p-2"
+          >
+            <option value="">Select</option>
+            {field.options?.map((opt: string, idx: number) => (
+              <option key={idx} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
     return (
       <div key={field.name} className="flex flex-col">
         <label className="font-medium mb-1">{field.label}</label>

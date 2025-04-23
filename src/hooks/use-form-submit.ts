@@ -21,7 +21,10 @@ export function useFormSubmit() {
           return;
         }
 
-        const url = endpoint.replace(/:([a-zA-Z0-9_]+)/g, (_, key) => data[key] || "");
+        const url = endpoint.replace(/\/:([a-zA-Z0-9_]+)/g, (_, key) =>
+          data[key] ? `/${data[key]}` : ""
+        );
+        
 
         const res = await fetch(url, {
           method,
