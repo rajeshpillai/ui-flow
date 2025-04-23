@@ -71,7 +71,9 @@
               "type": "grid",
               "label": "Inventory Items",
               "config": {
-                "display": "inline"
+                "display": "inline",
+                "validateUrl": "http://localhost:4000/api/inventory/item/validate",
+                "rowActions": true
               },
               "columns": [
                 {

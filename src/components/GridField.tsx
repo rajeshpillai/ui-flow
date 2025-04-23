@@ -9,15 +9,49 @@ interface GridFieldProps {
 
 const GridField: React.FC<GridFieldProps> = ({ field, value = [], onChange }) => {
   const [rows, setRows] = useState<any[]>(value);
+  const [optionsMap, setOptionsMap] = useState<Record<string, any[]>>({});
+  const [errors, setErrors] = useState<Record<number, string>>({});
 
   useEffect(() => {
     onChange(rows);
   }, [rows]);
 
-  const addRow = () => {
-    const initial = {};
-    field.columns.forEach((col: any) => (initial[col.name] = ""));
-    setRows([...rows, initial]);
+  useEffect(() => {
+    field.columns.forEach((col: any) => {
+      if (col.type === "dropdown" && col.lookupUrl && !optionsMap[col.name]) {
+        fetch(col.lookupUrl)
+          .then((res) => res.json())
+          .then((data) => {
+            setOptionsMap((prev) => ({ ...prev, [col.name]: data }));
+          })
+          .catch(() => setOptionsMap((prev) => ({ ...prev, [col.name]: [] })));
+      }
+    });
+  }, [field.columns]);
+
+  const validateRow = async (row: any, rowIndex: number) => {
+    if (!field.config?.validateUrl) return true;
+    try {
+      const res = await fetch(field.config.validateUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(row)
+      });
+      const result = await res.json();
+      if (!result.success) {
+        setErrors((prev) => ({ ...prev, [rowIndex]: result.message || "Invalid row" }));
+        return false;
+      }
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[rowIndex];
+        return updated;
+      });
+      return true;
+    } catch (err) {
+      setErrors((prev) => ({ ...prev, [rowIndex]: "Server error" }));
+      return false;
+    }
   };
 
   const updateCell = (rowIndex: number, key: string, val: any) => {
@@ -25,7 +59,6 @@ const GridField: React.FC<GridFieldProps> = ({ field, value = [], onChange }) =>
       if (i !== rowIndex) return row;
       const newRow = { ...row, [key]: val };
 
-      // recalculate dependent columns
       field.columns.forEach((col: any) => {
         if (col.calculated) {
           try {
@@ -42,8 +75,21 @@ const GridField: React.FC<GridFieldProps> = ({ field, value = [], onChange }) =>
     setRows(updated);
   };
 
+  const addRow = () => {
+    const initial = {};
+    field.columns.forEach((col: any) => (initial[col.name] = ""));
+    setRows([...rows, initial]);
+  };
+  
   const removeRow = (index: number) => {
     setRows(rows.filter((_, i) => i !== index));
+  };
+
+  const saveRow = async (row: any, rowIndex: number) => {
+    const isValid = await validateRow(row, rowIndex);
+    if (isValid) {
+      alert("Row is valid and saved.");
+    }
   };
 
   return (
@@ -69,9 +115,9 @@ const GridField: React.FC<GridFieldProps> = ({ field, value = [], onChange }) =>
                       onChange={(e) => updateCell(rowIndex, col.name, e.target.value)}
                     >
                       <option value="">Select</option>
-                      {/* TODO: fetch options from lookupUrl */}
-                      <option value="ITEM001">Item 001</option>
-                      <option value="ITEM002">Item 002</option>
+                      {optionsMap[col.name]?.map((opt: any) => (
+                        <option key={opt.code} value={opt.code}>{opt.description}</option>
+                      ))}
                     </select>
                   ) : col.calculated ? (
                     <span>{row[col.name]}</span>
@@ -85,19 +131,37 @@ const GridField: React.FC<GridFieldProps> = ({ field, value = [], onChange }) =>
                   )}
                 </td>
               ))}
-              <td className="border p-2 text-center">
-                <button
-                  type="button"
-                  onClick={() => removeRow(rowIndex)}
-                  className="text-red-600 hover:underline"
-                >
-                  Delete
-                </button>
+              <td className="border p-2 text-center space-x-2">
+                {field.config?.rowActions !== false && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => saveRow(row, rowIndex)}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeRow(rowIndex)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+      {Object.entries(errors).length > 0 && (
+        <div className="text-sm text-red-600 mt-2">
+          {Object.entries(errors).map(([idx, msg]) => (
+            <div key={idx}>Row {+idx + 1}: {msg}</div>
+          ))}
+        </div>
+      )}
       <button
         type="button"
         onClick={addRow}
